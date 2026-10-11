@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# vid-gen-ta
 
-## Getting Started
+A small Next.js app that turns a text prompt into a short video. It uses
+[Replicate](https://replicate.com)'s `minimax/video-01` model to generate the clip, then stores
+the last 20 results (thumbnail + prompt) in the browser so you can replay them from a carousel
+while the next one renders.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Prompt input with a "Generate short video" button.
+- Server-side API routes that call Replicate (your API token never reaches the browser).
+- Client-side polling of generation status with a timeout and error handling.
+- In-page `<video>` player for the result.
+- A recent-videos carousel (up to 3 thumbnails at a time, paged with `‹` / `›`) below the
+  input. Thumbnails are captured from the video client-side; clicking one plays it.
+- History of the 20 most recent generations, persisted in `localStorage`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Prerequisites
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Node.js 20.9+ (Next.js 16 requires a modern Node runtime).
+- A Replicate account and API token: <https://replicate.com/account/api-tokens>.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Setup
 
-## Learn More
+1. Install dependencies:
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   npm install
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. Create your local env file and add your token:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```bash
+   cp .env.example .env.local
+   ```
 
-## Deploy on Vercel
+   Then edit `.env.local`:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   ```
+   REPLICATE_API_TOKEN=your_token_here
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. Start the dev server:
+
+   ```bash
+   npm run dev
+   ```
+
+4. Open <http://localhost:3000>, enter a prompt, and generate a video.
+
+## Scripts
+
+| Command         | Description                        |
+| --------------- | ---------------------------------- |
+| `npm run dev`   | Start the dev server (Turbopack).  |
+| `npm run build` | Production build.                  |
+| `npm start`     | Run the production build.          |
+| `npm run lint`  | Lint with ESLint.                  |
+
+## How it works
+
+- `app/page.tsx` — client UI: prompt form, status, video player, and the history carousel.
+- `app/api/predictions/route.ts` — starts a Replicate prediction.
+- `app/api/predictions/[id]/route.ts` — returns the status/output for polling.
+- `lib/replicate.ts` — server-only Replicate API wrapper.
+- `lib/history.ts` — `localStorage`-backed history store and client-side thumbnail capture.
+
+See [NOTES.md](./NOTES.md) for a detailed description of the changes.
+
+## Tech stack
+
+- [Next.js 16](https://nextjs.org) (App Router, Turbopack)
+- [React 19](https://react.dev)
+- [Tailwind CSS 4](https://tailwindcss.com)
+- [Replicate](https://replicate.com) (`minimax/video-01`)
